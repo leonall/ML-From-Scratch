@@ -1,14 +1,11 @@
 from __future__ import division, print_function
 import numpy as np
 from sklearn import datasets
-import sys
-import os
 import matplotlib.pyplot as plt
 
 # Import helper functions
-from mlfromscratch.utils.data_manipulation import train_test_split
-from mlfromscratch.utils.data_operation import accuracy_score
-from mlfromscratch.utils.loss_functions import CrossEntropy
+from mlfromscratch.utils import train_test_split, accuracy_score
+from mlfromscratch.deep_learning.loss_functions import CrossEntropy
 from mlfromscratch.utils import Plot
 from mlfromscratch.supervised_learning import GradientBoostingClassifier
 
@@ -22,7 +19,7 @@ def main():
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
 
-    clf = GradientBoostingClassifier(debug=True)
+    clf = GradientBoostingClassifier()
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_test)
 

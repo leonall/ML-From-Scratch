@@ -1,15 +1,10 @@
 from __future__ import division, print_function
 import numpy as np
 from sklearn import datasets
-import sys
-import os
 import matplotlib.pyplot as plt
 import progressbar
-
-# Import helper functions
-from mlfromscratch.utils.data_manipulation import train_test_split, standardize, to_categorical, normalize
-from mlfromscratch.utils.data_operation import mean_squared_error, accuracy_score
-from mlfromscratch.utils import Plot
+from mlfromscratch.utils import train_test_split, standardize, to_categorical, normalize
+from mlfromscratch.utils import mean_squared_error, accuracy_score, Plot
 from mlfromscratch.supervised_learning import XGBoost
 
 def main():
@@ -22,7 +17,7 @@ def main():
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, seed=2)  
 
-    clf = XGBoost(debug=True)
+    clf = XGBoost()
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_test)
 

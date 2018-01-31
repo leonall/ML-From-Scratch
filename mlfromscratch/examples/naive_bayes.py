@@ -1,18 +1,15 @@
 from __future__ import division, print_function
 from sklearn import datasets
 import numpy as np
-
-from mlfromscratch.utils.data_manipulation import train_test_split, normalize
-from mlfromscratch.utils.data_operation import accuracy_score
-from mlfromscratch.utils import Plot
+from mlfromscratch.utils import train_test_split, normalize, accuracy_score, Plot
 from mlfromscratch.supervised_learning import NaiveBayes
 
 def main():
-    data = datasets.load_iris()
+    data = datasets.load_digits()
     X = normalize(data.data)
     y = data.target
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
 
     clf = NaiveBayes()
     clf.fit(X_train, y_train)

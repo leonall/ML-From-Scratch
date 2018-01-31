@@ -2,16 +2,10 @@ from __future__ import print_function
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn import datasets
-import sys
-import os
-import math
 # Import helper functions
 from mlfromscratch.supervised_learning import PolynomialRidgeRegression
-from mlfromscratch.utils.data_manipulation import k_fold_cross_validation_sets, normalize
-from mlfromscratch.utils.data_manipulation import train_test_split, polynomial_features
-from mlfromscratch.utils.data_operation import mean_squared_error
-from mlfromscratch.utils import Plot
+from mlfromscratch.utils import k_fold_cross_validation_sets, normalize, Plot
+from mlfromscratch.utils import train_test_split, polynomial_features, mean_squared_error
 
 
 def main():
@@ -39,12 +33,12 @@ def main():
             X_train, y_train, k=k)
         mse = 0
         for _X_train, _X_test, _y_train, _y_test in cross_validation_sets:
-            clf = PolynomialRidgeRegression(degree=poly_degree, 
+            model = PolynomialRidgeRegression(degree=poly_degree, 
                                             reg_factor=reg_factor,
                                             learning_rate=0.001,
                                             n_iterations=10000)
-            clf.fit(_X_train, _y_train)
-            y_pred = clf.predict(_X_test)
+            model.fit(_X_train, _y_train)
+            y_pred = model.predict(_X_test)
             _mse = mean_squared_error(_y_test, y_pred)
             mse += _mse
         mse /= k
@@ -58,16 +52,17 @@ def main():
             lowest_error = mse
 
     # Make final prediction
-    clf = PolynomialRidgeRegression(degree=poly_degree, 
-                                    reg_factor=best_reg_factor,
+    model = PolynomialRidgeRegression(degree=poly_degree, 
+                                    reg_factor=reg_factor,
                                     learning_rate=0.001,
                                     n_iterations=10000)
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    mse = mean_squared_error(y_test, y_pred)
-    print ("Mean squared error: %s (given by reg. factor: %s)" % (lowest_error, best_reg_factor))
+    model.fit(X_train, y_train)
 
-    y_pred_line = clf.predict(X)
+    y_pred = model.predict(X_test)
+    mse = mean_squared_error(y_test, y_pred)
+    print ("Mean squared error: %s (given by reg. factor: %s)" % (mse, reg_factor))
+
+    y_pred_line = model.predict(X)
 
     # Color map
     cmap = plt.get_cmap('viridis')

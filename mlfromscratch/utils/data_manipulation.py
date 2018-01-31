@@ -6,19 +6,28 @@ import sys
 
 
 def shuffle_data(X, y, seed=None):
+    """ Random shuffle of the samples in X and y """
     if seed:
         np.random.seed(seed)
-    n_samples = X.shape[0]
-    idx = np.arange(n_samples)
+    idx = np.arange(X.shape[0])
     np.random.shuffle(idx)
-    X = X[idx]
-    y = y[idx]
-    return X, y
+    return X[idx], y[idx]
 
 
-# Divide dataset based on if sample value on feature index is larger than
-# the given threshold
+def batch_iterator(X, y=None, batch_size=64):
+    """ Simple batch generator """
+    n_samples = X.shape[0]
+    for i in np.arange(0, n_samples, batch_size):
+        begin, end = i, min(i+batch_size, n_samples)
+        if y is not None:
+            yield X[begin:end], y[begin:end]
+        else:
+            yield X[begin:end]
+
+
 def divide_on_feature(X, feature_i, threshold):
+    """ Divide dataset based on if sample value on feature index is larger than
+        the given threshold """
     split_func = None
     if isinstance(threshold, int) or isinstance(threshold, float):
         split_func = lambda sample: sample[feature_i] >= threshold
@@ -30,8 +39,8 @@ def divide_on_feature(X, feature_i, threshold):
 
     return np.array([X_1, X_2])
 
-def polynomial_features(X, degree):
 
+def polynomial_features(X, degree):
     n_samples, n_features = np.shape(X)
 
     def index_combinations():
@@ -48,8 +57,9 @@ def polynomial_features(X, degree):
 
     return X_new
 
-# Return random subsets (with replacements) of the data
+
 def get_random_subsets(X, y, n_subsets, replacements=True):
+    """ Return random subsets (with replacements) of the data """
     n_samples = np.shape(X)[0]
     # Concatenate x and y and do a random shuffle
     X_y = np.concatenate((X, y.reshape((1, len(y))).T), axis=1)
@@ -57,7 +67,7 @@ def get_random_subsets(X, y, n_subsets, replacements=True):
     subsets = []
 
     # Uses 50% of training samples without replacements
-    subsample_size = n_samples // 2
+    subsample_size = int(n_samples // 2)
     if replacements:
         subsample_size = n_samples      # 100% with replacements
 
@@ -72,15 +82,15 @@ def get_random_subsets(X, y, n_subsets, replacements=True):
     return subsets
 
 
-# Normalize the dataset X
 def normalize(X, axis=-1, order=2):
+    """ Normalize the dataset X """
     l2 = np.atleast_1d(np.linalg.norm(X, order, axis))
     l2[l2 == 0] = 1
     return X / np.expand_dims(l2, axis)
 
 
-# Standardize the dataset X
 def standardize(X):
+    """ Standardize the dataset X """
     X_std = X
     mean = X.mean(axis=0)
     std = X.std(axis=0)
@@ -91,21 +101,21 @@ def standardize(X):
     return X_std
 
 
-# Split the data into train and test sets
 def train_test_split(X, y, test_size=0.5, shuffle=True, seed=None):
+    """ Split the data into train and test sets """
     if shuffle:
         X, y = shuffle_data(X, y, seed)
     # Split the training data from test data in the ratio specified in
     # test_size
     split_i = len(y) - int(len(y) // (1 / test_size))
-    x_train, x_test = X[:split_i], X[split_i:]
+    X_train, X_test = X[:split_i], X[split_i:]
     y_train, y_test = y[:split_i], y[split_i:]
 
-    return x_train, x_test, y_train, y_test
+    return X_train, X_test, y_train, y_test
 
 
-# Split the data into k sets of training / test data
 def k_fold_cross_validation_sets(X, y, k, shuffle=True):
+    """ Split the data into k sets of training / test data """
     if shuffle:
         X, y = shuffle_data(X, y)
 
@@ -135,34 +145,23 @@ def k_fold_cross_validation_sets(X, y, k, shuffle=True):
     return np.array(sets)
 
 
-# One-hot encoding of nominal values
 def to_categorical(x, n_col=None):
+    """ One-hot encoding of nominal values """
     if not n_col:
         n_col = np.amax(x) + 1
-    binarized = np.zeros((len(x), n_col))
-    for i in range(len(x)):
-        binarized[i, x[i]] = 1
-
-    return binarized
+    one_hot = np.zeros((x.shape[0], n_col))
+    one_hot[np.arange(x.shape[0]), x] = 1
+    return one_hot
 
 
-# Conversion from one-hot encoding to nominal
 def to_nominal(x):
-    categorical = []
-    for i in range(len(x)):
-        if not 1 in x[i]:
-            categorical.append(0)
-        else:
-            i_where_one = np.where(x[i] == 1)[0][0]
-            categorical.append(i_where_one)
-
-    return categorical
+    """ Conversion from one-hot encoding to nominal """
+    return np.argmax(x, axis=1)
 
 
-# Converts a vector into an diagonal matrix
 def make_diagonal(x):
+    """ Converts a vector into an diagonal matrix """
     m = np.zeros((len(x), len(x)))
     for i in range(len(m[0])):
         m[i, i] = x[i]
-
     return m

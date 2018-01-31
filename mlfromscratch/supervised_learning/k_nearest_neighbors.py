@@ -1,17 +1,6 @@
-from __future__ import print_function
-import sys
-import os
-import math
+from __future__ import print_function, division
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn import datasets
-
-# Import helper functions
-from mlfromscratch.utils.data_manipulation import train_test_split, normalize
-from mlfromscratch.utils.data_operation import euclidean_distance, accuracy_score
-from mlfromscratch.unsupervised_learning import PCA
-from mlfromscratch.utils import Plot
-
+from mlfromscratch.utils import euclidean_distance
 
 class KNN():
     """ K Nearest Neighbors classifier.
@@ -25,38 +14,21 @@ class KNN():
     def __init__(self, k=5):
         self.k = k
 
-    # Do a majority vote among the neighbors
-    def _majority_vote(self, neighbors, classes):
-        max_count = 0
-        most_common = None
-        # Count class occurences among neighbors
-        for c in np.unique(classes):
-            # Count number of neighbors with class c
-            count = len(neighbors[neighbors[:, 1] == c])
-            if count > max_count:
-                max_count = count
-                most_common = c
-        return most_common
+    def _vote(self, neighbor_labels):
+        """ Return the most common class among the neighbor samples """
+        counts = np.bincount(neighbor_labels.astype('int'))
+        return counts.argmax()
 
     def predict(self, X_test, X_train, y_train):
-        classes = np.unique(y_train)
-        y_pred = []
+        y_pred = np.empty(X_test.shape[0])
         # Determine the class of each sample
-        for test_sample in X_test:
-            neighbors = []
-            # Calculate the distance form each observed sample to the
-            # sample we wish to predict
-            for j, observed_sample in enumerate(X_train):
-                distance = euclidean_distance(test_sample, observed_sample)
-                label = y_train[j]
-                # Add neighbor information
-                neighbors.append([distance, label])
-            neighbors = np.array(neighbors)
-            # Sort the list of observed samples from lowest to highest distance
-            # and select the k first
-            k_nearest_neighbors = neighbors[neighbors[:, 0].argsort()][:self.k]
-            # Do a majority vote among the k neighbors and set prediction as the
-            # class receing the most votes
-            label = self._majority_vote(k_nearest_neighbors, classes)
-            y_pred.append(label)
-        return np.array(y_pred)
+        for i, test_sample in enumerate(X_test):
+            # Sort the training samples by their distance to the test sample and get the K nearest
+            idx = np.argsort([euclidean_distance(test_sample, x) for x in X_train])[:self.k]
+            # Extract the labels of the K nearest neighboring training samples
+            k_nearest_neighbors = np.array([y_train[i] for i in idx])
+            # Label sample as the most common class label
+            y_pred[i] = self._vote(k_nearest_neighbors)
+
+        return y_pred
+        

@@ -1,22 +1,13 @@
-from __future__ import print_function
-import sys
-import os
-import scipy
-from sklearn import datasets
-from sklearn.preprocessing import StandardScaler
-from mpl_toolkits.mplot3d import Axes3D
+from __future__ import print_function, division
 import matplotlib.pyplot as plt
 import numpy as np
-
-# Import helper functions
-from mlfromscratch.utils.data_operation import calculate_covariance_matrix
-from mlfromscratch.utils.data_manipulation import normalize, standardize
+from mlfromscratch.utils import calculate_covariance_matrix, normalize, standardize
 
 
 class MultiClassLDA():
     """Enables dimensionality reduction for multiple
-    class distributions. It transforms the features space into a space where 
-    the between class scatter is maximized and the within class scatter is 
+    class distributions. It transforms the features space into a space where
+    the between class scatter is maximized and the within class scatter is
     minimized.
 
     Parameters:
@@ -54,18 +45,8 @@ class MultiClassLDA():
     def transform(self, X, y, n_components):
         SW, SB = self._calculate_scatter_matrices(X, y)
 
-        A = None
-        # Computationally cheaper than other option.
-        if self.solver == "svd":
-            # Calculate SW^-1 * SB by SVD (pseudoinverse of diagonal matrix S)
-            U, S, V = np.linalg.svd(SW)
-            S = np.diag(S)
-            SW_inverse = V.dot(np.linalg.pinv(S)).dot(U.T)
-            A = SW_inverse.dot(SB)
-        # Computationally expensive.
-        else:
-            # Determine SW^-1 * SB by calculating inverse of SW
-            A = np.linalg.inv(SW).dot(SB)
+        # Determine SW^-1 * SB by calculating inverse of SW
+        A = np.linalg.inv(SW).dot(SB)
 
         # Get eigenvalues and eigenvectors of SW^-1 * SB
         eigenvalues, eigenvectors = np.linalg.eigh(A)
@@ -91,4 +72,3 @@ class MultiClassLDA():
         plt.scatter(x1, x2, c=y)
         if title: plt.title(title)
         plt.show()
-

@@ -1,18 +1,14 @@
 from __future__ import division, print_function
 import numpy as np
-from sklearn import datasets
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.optimize import line_search
 import progressbar
 
-# Import helper functions
-from mlfromscratch.utils.data_manipulation import train_test_split, standardize, to_categorical
-from mlfromscratch.utils.data_operation import mean_squared_error, accuracy_score
+from mlfromscratch.utils import train_test_split, standardize, to_categorical
+from mlfromscratch.utils import mean_squared_error, accuracy_score, Plot
 from mlfromscratch.utils.loss_functions import SquareLoss
 from mlfromscratch.utils.misc import bar_widgets
 from mlfromscratch.supervised_learning import GradientBoostingRegressor
-from mlfromscratch.utils import Plot
 
 
 def main():
@@ -30,11 +26,11 @@ def main():
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
 
-    clf = GradientBoostingRegressor(debug=True)
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
+    model = GradientBoostingRegressor()
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
 
-    y_pred_line = clf.predict(X)
+    y_pred_line = model.predict(X)
 
     # Color map
     cmap = plt.get_cmap('viridis')

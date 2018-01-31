@@ -2,18 +2,15 @@
 from __future__ import print_function
 from sklearn import datasets
 import matplotlib.pyplot as plt
-import math
 import numpy as np
 
 # Import helper functions
 from mlfromscratch.deep_learning import NeuralNetwork
-from mlfromscratch.utils.data_manipulation import train_test_split, to_categorical, normalize
-from mlfromscratch.utils.data_manipulation import get_random_subsets, shuffle_data
-from mlfromscratch.utils.data_operation import accuracy_score
-from mlfromscratch.deep_learning.optimizers import GradientDescent, Adam, RMSprop, Adagrad, Adadelta
+from mlfromscratch.utils import train_test_split, to_categorical, normalize, Plot
+from mlfromscratch.utils import get_random_subsets, shuffle_data, accuracy_score
+from mlfromscratch.deep_learning.optimizers import StochasticGradientDescent, Adam, RMSprop, Adagrad, Adadelta
 from mlfromscratch.deep_learning.loss_functions import CrossEntropy
 from mlfromscratch.utils.misc import bar_widgets
-from mlfromscratch.utils import Plot
 from mlfromscratch.deep_learning.layers import Dense, Dropout, Activation
 
 
@@ -32,7 +29,7 @@ def main():
     # Convert to one-hot encoding
     y = to_categorical(y.astype("int"))
 
-    n_samples = np.shape(X)
+    n_samples, n_features = X.shape
     n_hidden = 512
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, seed=1)
@@ -41,7 +38,7 @@ def main():
                         loss=CrossEntropy,
                         validation_data=(X_test, y_test))
 
-    clf.add(Dense(n_hidden, input_shape=(8*8,)))
+    clf.add(Dense(n_hidden, input_shape=(n_features,)))
     clf.add(Activation('leaky_relu'))
     clf.add(Dense(n_hidden))
     clf.add(Activation('leaky_relu'))
@@ -70,14 +67,11 @@ def main():
     plt.xlabel('Iterations')
     plt.show()
 
-    # Predict labels of the test data
-    y_pred = np.argmax(clf.predict(X_test), axis=1)
-    y_test = np.argmax(y_test, axis=1)
-
-    accuracy = accuracy_score(y_test, y_pred)
+    _, accuracy = clf.test_on_batch(X_test, y_test)
     print ("Accuracy:", accuracy)
 
     # Reduce dimension to 2D using PCA and plot the results
+    y_pred = np.argmax(clf.predict(X_test), axis=1)
     Plot().plot_in_2d(X_test, y_pred, title="Multilayer Perceptron", accuracy=accuracy, legend_labels=range(10))
 
 

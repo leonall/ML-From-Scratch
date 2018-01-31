@@ -1,31 +1,40 @@
 
 from __future__ import print_function, division
-import sys
-import os
 import math
 import numpy as np
 import copy
-from mlfromscratch.deep_learning.activation_functions import Sigmoid, ReLU, SoftPlus, LeakyReLU, TanH, ELU, SELU, Softmax
+from mlfromscratch.deep_learning.activation_functions import Sigmoid, ReLU, SoftPlus, LeakyReLU
+from mlfromscratch.deep_learning.activation_functions import TanH, ELU, SELU, Softmax
 
 
 class Layer(object):
 
     def set_input_shape(self, shape):
+        """ Sets the shape that the layer expects of the input in the forward 
+        pass method """
         self.input_shape = shape
 
     def layer_name(self):
+        """ The name of the layer. Used in model summary. """
         return self.__class__.__name__
 
     def parameters(self):
+        """ The number of trainable parameters used by the layer """
         return 0
 
     def forward_pass(self, X, training):
+        """ Propogates the signal forward in the network """
         raise NotImplementedError()
 
-    def backward_pass(self, acc_grad):
+    def backward_pass(self, accum_grad):
+        """ Propogates the accumulated gradient backwards in the network.
+        If the has trainable weights then these weights are also tuned in this method.
+        As input (accum_grad) it receives the gradient with respect to the output of the layer and
+        returns the gradient with respect to the output of the previous layer. """
         raise NotImplementedError()
 
     def output_shape(self):
+        """ The shape of the output produced by forward_pass """
         raise NotImplementedError()
 
 
@@ -46,45 +55,44 @@ class Dense(Layer):
         self.n_units = n_units
         self.trainable = True
         self.W = None
-        self.wb = None
+        self.w0 = None
 
     def initialize(self, optimizer):
         # Initialize the weights
         limit = 1 / math.sqrt(self.input_shape[0])
         self.W  = np.random.uniform(-limit, limit, (self.input_shape[0], self.n_units))
-        self.wb = np.zeros((1, self.n_units))
+        self.w0 = np.zeros((1, self.n_units))
         # Weight optimizers
         self.W_opt  = copy.copy(optimizer)
-        self.wb_opt = copy.copy(optimizer)
+        self.w0_opt = copy.copy(optimizer)
 
     def parameters(self):
-        return np.prod(self.W.shape) + np.prod(self.wb.shape)
+        return np.prod(self.W.shape) + np.prod(self.w0.shape)
 
     def forward_pass(self, X, training=True):
         self.layer_input = X
-        return X.dot(self.W) + self.wb
+        return X.dot(self.W) + self.w0
 
-    def backward_pass(self, acc_grad):
-        
+    def backward_pass(self, accum_grad):
         # Save weights used during forwards pass
         W = self.W
 
         if self.trainable:
             # Calculate gradient w.r.t layer weights
-            grad_w = self.layer_input.T.dot(acc_grad)
-            grad_wb = np.sum(acc_grad, axis=0, keepdims=True)
+            grad_w = self.layer_input.T.dot(accum_grad)
+            grad_w0 = np.sum(accum_grad, axis=0, keepdims=True)
 
             # Update the layer weights
             self.W = self.W_opt.update(self.W, grad_w)
-            self.wb = self.wb_opt.update(self.wb, grad_wb)
+            self.w0 = self.w0_opt.update(self.w0, grad_w0)
 
         # Return accumulated gradient for next layer
         # Calculated based on the weights used during the forward pass
-        acc_grad = acc_grad.dot(W.T)
-        return acc_grad
+        accum_grad = accum_grad.dot(W.T)
+        return accum_grad
 
     def output_shape(self):
-        return (self.n_units,)
+        return (self.n_units, )
 
 
 class RNN(Layer):
@@ -147,13 +155,13 @@ class RNN(Layer):
         for t in range(timesteps):
             # Input to state_t is the current input and output of previous states
             self.state_input[:, t] = X[:, t].dot(self.U.T) + self.states[:, t-1].dot(self.W.T)
-            self.states[:, t] = self.activation.function(self.state_input[:, t])
+            self.states[:, t] = self.activation(self.state_input[:, t])
             self.outputs[:, t] = self.states[:, t].dot(self.V.T)
 
         return self.outputs
 
-    def backward_pass(self, acc_grad):
-        _, timesteps, _ = acc_grad.shape
+    def backward_pass(self, accum_grad):
+        _, timesteps, _ = accum_grad.shape
         
         # Variables where we save the accumulated gradient w.r.t each parameter
         grad_U = np.zeros_like(self.U)
@@ -161,16 +169,16 @@ class RNN(Layer):
         grad_W = np.zeros_like(self.W)
         # The gradient w.r.t the layer input. 
         # Will be passed on to the previous layer in the network
-        acc_grad_next = np.zeros_like(acc_grad)
+        accum_grad_next = np.zeros_like(accum_grad)
 
         # Back Propagation Through Time
         for t in reversed(range(timesteps)):
             # Update gradient w.r.t V at time step t
-            grad_V += acc_grad[:, t].T.dot(self.states[:, t])
+            grad_V += accum_grad[:, t].T.dot(self.states[:, t])
             # Calculate the gradient w.r.t the state input
-            grad_wrt_state = acc_grad[:, t].dot(self.V) * self.activation.gradient(self.state_input[:, t])
+            grad_wrt_state = accum_grad[:, t].dot(self.V) * self.activation.gradient(self.state_input[:, t])
             # Gradient w.r.t the layer input
-            acc_grad_next[:, t] = grad_wrt_state.dot(self.U)
+            accum_grad_next[:, t] = grad_wrt_state.dot(self.U)
             # Update gradient w.r.t W and U by backprop. from time step t for at most
             # self.bptt_trunc number of time steps
             for t_ in reversed(np.arange(max(0, t - self.bptt_trunc), t+1)):
@@ -184,7 +192,7 @@ class RNN(Layer):
         self.V = self.V_opt.update(self.V, grad_V)
         self.W = self.W_opt.update(self.W, grad_W)
 
-        return acc_grad_next
+        return accum_grad_next
 
     def output_shape(self):
         return self.input_shape
@@ -222,13 +230,13 @@ class Conv2D(Layer):
         channels = self.input_shape[0]
         limit = 1 / math.sqrt(np.prod(self.filter_shape))
         self.W  = np.random.uniform(-limit, limit, size=(self.n_filters, channels, filter_height, filter_width))
-        self.wb = np.zeros((self.n_filters, 1))
+        self.w0 = np.zeros((self.n_filters, 1))
         # Weight optimizers
         self.W_opt  = copy.copy(optimizer)
-        self.wb_opt = copy.copy(optimizer)
+        self.w0_opt = copy.copy(optimizer)
 
     def parameters(self):
-        return np.prod(self.W.shape) + np.prod(self.wb.shape)
+        return np.prod(self.W.shape) + np.prod(self.w0.shape)
 
     def forward_pass(self, X, training=True):
         batch_size, channels, height, width = X.shape
@@ -239,37 +247,37 @@ class Conv2D(Layer):
         # Turn weights into column shape
         self.W_col = self.W.reshape((self.n_filters, -1))
         # Calculate output
-        output = self.W_col.dot(self.X_col) + self.wb
+        output = self.W_col.dot(self.X_col) + self.w0
         # Reshape into (n_filters, out_height, out_width, batch_size)
         output = output.reshape(self.output_shape() + (batch_size, ))
         # Redistribute axises so that batch size comes first
         return output.transpose(3,0,1,2)
 
-    def backward_pass(self, acc_grad):
+    def backward_pass(self, accum_grad):
         # Reshape accumulated gradient into column shape
-        acc_grad = acc_grad.transpose(1, 2, 3, 0).reshape(self.n_filters, -1)
+        accum_grad = accum_grad.transpose(1, 2, 3, 0).reshape(self.n_filters, -1)
 
         if self.trainable:
             # Take dot product between column shaped accum. gradient and column shape
             # layer input to determine the gradient at the layer with respect to layer weights
-            grad_w = acc_grad.dot(self.X_col.T).reshape(self.W.shape)
+            grad_w = accum_grad.dot(self.X_col.T).reshape(self.W.shape)
             # The gradient with respect to bias terms is the sum similarly to in Dense layer
-            grad_wb = np.sum(acc_grad, axis=1, keepdims=True)
+            grad_w0 = np.sum(accum_grad, axis=1, keepdims=True)
 
             # Update the layers weights
             self.W = self.W_opt.update(self.W, grad_w)
-            self.wb = self.wb_opt.update(self.wb, grad_wb)
+            self.w0 = self.w0_opt.update(self.w0, grad_w0)
 
         # Recalculate the gradient which will be propogated back to prev. layer
-        acc_grad = self.W_col.T.dot(acc_grad)
+        accum_grad = self.W_col.T.dot(accum_grad)
         # Reshape from column shape to image shape
-        acc_grad = column_to_image(acc_grad, 
+        accum_grad = column_to_image(accum_grad, 
                                 self.layer_input.shape, 
                                 self.filter_shape, 
                                 stride=self.stride, 
                                 output_shape=self.padding)
 
-        return acc_grad
+        return accum_grad
 
     def output_shape(self):
         channels, height, width = self.input_shape
@@ -307,23 +315,25 @@ class BatchNormalization(Layer):
             self.running_mean = np.mean(X, axis=0)
             self.running_var = np.var(X, axis=0)
 
-        if training:
+        if training and self.trainable:
             mean = np.mean(X, axis=0)
             var = np.var(X, axis=0)
-            self.X_centered = X - mean
-            self.stddev_inv = 1 / np.sqrt(var + self.eps)
             self.running_mean = self.momentum * self.running_mean + (1 - self.momentum) * mean
             self.running_var = self.momentum * self.running_var + (1 - self.momentum) * var
         else:
             mean = self.running_mean
             var = self.running_var
 
-        X_norm = (X - mean) / np.sqrt(var + self.eps)
+        # Statistics saved for backward pass
+        self.X_centered = X - mean
+        self.stddev_inv = 1 / np.sqrt(var + self.eps)
+
+        X_norm = self.X_centered * self.stddev_inv
         output = self.gamma * X_norm + self.beta
 
         return output
 
-    def backward_pass(self, acc_grad):
+    def backward_pass(self, accum_grad):
 
         # Save parameters used during the forward pass
         gamma = self.gamma
@@ -331,22 +341,22 @@ class BatchNormalization(Layer):
         # If the layer is trainable the parameters are updated
         if self.trainable:
             X_norm = self.X_centered * self.stddev_inv
-            grad_gamma = np.sum(acc_grad * X_norm, axis=0)
-            grad_beta = np.sum(acc_grad, axis=0)
+            grad_gamma = np.sum(accum_grad * X_norm, axis=0)
+            grad_beta = np.sum(accum_grad, axis=0)
 
             self.gamma = self.gamma_opt.update(self.gamma, grad_gamma)
             self.beta = self.beta_opt.update(self.beta, grad_beta)
 
-        batch_size = acc_grad.shape[0]
+        batch_size = accum_grad.shape[0]
 
-        # The gradient of the loss with respect to the layer inputs (use weights from forward pass)
-        acc_grad = (1 / batch_size) * gamma * self.stddev_inv * (
-            batch_size * acc_grad 
-            - np.sum(acc_grad, axis=0)
-            - self.X_centered * self.stddev_inv**2 * np.sum(acc_grad * self.X_centered, axis=0)
+        # The gradient of the loss with respect to the layer inputs (use weights and statistics from forward pass)
+        accum_grad = (1 / batch_size) * gamma * self.stddev_inv * (
+            batch_size * accum_grad 
+            - np.sum(accum_grad, axis=0)
+            - self.X_centered * self.stddev_inv**2 * np.sum(accum_grad * self.X_centered, axis=0)
             )
 
-        return acc_grad
+        return accum_grad
 
     def output_shape(self):
         return self.input_shape
@@ -379,18 +389,18 @@ class PoolingLayer(Layer):
 
         return output
 
-    def backward_pass(self, acc_grad):
-        batch_size, _, _, _ = acc_grad.shape
+    def backward_pass(self, accum_grad):
+        batch_size, _, _, _ = accum_grad.shape
         channels, height, width = self.input_shape
-        acc_grad = acc_grad.transpose(2, 3, 0, 1).ravel()
+        accum_grad = accum_grad.transpose(2, 3, 0, 1).ravel()
 
         # MaxPool or AveragePool specific method
-        acc_grad_col = self._pool_backward(acc_grad)
+        accum_grad_col = self._pool_backward(accum_grad)
 
-        acc_grad = column_to_image(acc_grad_col, (batch_size * channels, 1, height, width), self.pool_shape, self.stride, 0)
-        acc_grad = acc_grad.reshape((batch_size,) + self.input_shape)
+        accum_grad = column_to_image(accum_grad_col, (batch_size * channels, 1, height, width), self.pool_shape, self.stride, 0)
+        accum_grad = accum_grad.reshape((batch_size,) + self.input_shape)
 
-        return acc_grad
+        return accum_grad
 
     def output_shape(self):
         channels, height, width = self.input_shape
@@ -408,21 +418,21 @@ class MaxPooling2D(PoolingLayer):
         self.cache = arg_max
         return output
 
-    def _pool_backward(self, acc_grad):
-        acc_grad_col = np.zeros((np.prod(self.pool_shape), acc_grad.size))
+    def _pool_backward(self, accum_grad):
+        accum_grad_col = np.zeros((np.prod(self.pool_shape), accum_grad.size))
         arg_max = self.cache
-        acc_grad_col[arg_max, range(acc_grad.size)] = acc_grad
-        return acc_grad_col
+        accum_grad_col[arg_max, range(accum_grad.size)] = accum_grad
+        return accum_grad_col
 
 class AveragePooling2D(PoolingLayer):
     def _pool_forward(self, X_col):
         output = np.mean(X_col, axis=0)
         return output
 
-    def _pool_backward(self, acc_grad):
-        acc_grad_col = np.zeros((np.prod(self.pool_shape), acc_grad.size))
-        acc_grad_col[:, range(acc_grad.size)] = 1. / acc_grad_col.shape[0] * acc_grad
-        return acc_grad_col
+    def _pool_backward(self, accum_grad):
+        accum_grad_col = np.zeros((np.prod(self.pool_shape), accum_grad.size))
+        accum_grad_col[:, range(accum_grad.size)] = 1. / accum_grad_col.shape[0] * accum_grad
+        return accum_grad_col
 
 
 class ConstantPadding2D(Layer):
@@ -455,11 +465,11 @@ class ConstantPadding2D(Layer):
             constant_values=self.padding_value)
         return output
 
-    def backward_pass(self, acc_grad):
+    def backward_pass(self, accum_grad):
         pad_top, pad_left = self.padding[0][0], self.padding[1][0]
         height, width = self.input_shape[1], self.input_shape[2]
-        acc_grad = acc_grad[:, :, pad_top:pad_top+height, pad_left:pad_left+width]
-        return acc_grad
+        accum_grad = accum_grad[:, :, pad_top:pad_top+height, pad_left:pad_left+width]
+        return accum_grad
 
     def output_shape(self):
         new_height = self.input_shape[1] + np.sum(self.padding[0])
@@ -499,8 +509,8 @@ class Flatten(Layer):
         self.prev_shape = X.shape
         return X.reshape((X.shape[0], -1))
 
-    def backward_pass(self, acc_grad):
-        return acc_grad.reshape(self.prev_shape)
+    def backward_pass(self, accum_grad):
+        return accum_grad.reshape(self.prev_shape)
 
     def output_shape(self):
         return (np.prod(self.input_shape),)
@@ -527,10 +537,10 @@ class UpSampling2D(Layer):
         X_new = X.repeat(self.size[0], axis=2).repeat(self.size[1], axis=3)
         return X_new
 
-    def backward_pass(self, acc_grad):
+    def backward_pass(self, accum_grad):
         # Down sample input to previous shape
-        acc_grad = acc_grad[:, :, ::self.size[0], ::self.size[1]]
-        return acc_grad
+        accum_grad = accum_grad[:, :, ::self.size[0], ::self.size[1]]
+        return accum_grad
 
     def output_shape(self):
         channels, height, width = self.input_shape
@@ -555,8 +565,8 @@ class Reshape(Layer):
         self.prev_shape = X.shape
         return X.reshape((X.shape[0], ) + self.shape)
 
-    def backward_pass(self, acc_grad):
-        return acc_grad.reshape(self.prev_shape)
+    def backward_pass(self, accum_grad):
+        return accum_grad.reshape(self.prev_shape)
 
     def output_shape(self):
         return self.shape
@@ -586,8 +596,8 @@ class Dropout(Layer):
             c = self._mask
         return X * c
 
-    def backward_pass(self, acc_grad):
-        return acc_grad * self._mask
+    def backward_pass(self, accum_grad):
+        return accum_grad * self._mask
 
     def output_shape(self):
         return self.input_shape
@@ -614,18 +624,18 @@ class Activation(Layer):
 
     def __init__(self, name):
         self.activation_name = name
-        self.activation = activation_functions[name]()
+        self.activation_func = activation_functions[name]()
         self.trainable = True
 
     def layer_name(self):
-        return "%s (%s)" % (self.__class__.__name__, self.activation.__class__.__name__)
+        return "Activation (%s)" % (self.activation_func.__class__.__name__)
 
     def forward_pass(self, X, training=True):
         self.layer_input = X
-        return self.activation.function(X)
+        return self.activation_func(X)
 
-    def backward_pass(self, acc_grad):
-        return acc_grad * self.activation.gradient(self.layer_input)
+    def backward_pass(self, accum_grad):
+        return accum_grad * self.activation_func.gradient(self.layer_input)
 
     def output_shape(self):
         return self.input_shape

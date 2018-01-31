@@ -1,17 +1,7 @@
-from __future__ import print_function
-import matplotlib.pyplot as plt
+from __future__ import print_function, division
 import numpy as np
-from sklearn import datasets
-import pandas as pd
-import sys
-import os
-import math
-
 from scipy.stats import chi2, multivariate_normal
-
-# Import helper functions
-from mlfromscratch.utils.data_operation import mean_squared_error
-from mlfromscratch.utils.data_manipulation import train_test_split, polynomial_features
+from mlfromscratch.utils import mean_squared_error, train_test_split, polynomial_features
 
 
 
@@ -20,6 +10,7 @@ class BayesianRegression(object):
     be transformed to with a polynomial basis function, which allows for polynomial
     regression. Assumes Normal prior and likelihood for the weights and scaled inverse
     chi-squared prior and likelihood for the variance of the weights.
+
     Parameters:
     -----------
     n_draws: float
@@ -39,7 +30,7 @@ class BayesianRegression(object):
         The credible interval (ETI in this impl.). 95 => 95% credible interval of the posterior
         of the parameters.
 
-    Reference: 
+    Reference:
         https://github.com/mattiasvillani/BayesLearnCourse/raw/master/Slides/BayesLearnL5.pdf
     """
     def __init__(self, n_draws, mu0, omega0, nu0, sigma_sq0, poly_degree=0, cred_int=95):
@@ -63,7 +54,6 @@ class BayesianRegression(object):
         X = chi2.rvs(size=n, df=df)
         sigma_sq = df * scale / X
         return sigma_sq
-
 
     def fit(self, X, y):
 
@@ -100,7 +90,7 @@ class BayesianRegression(object):
         # Select the mean of the simulated variables as the ones used to make predictions
         self.w = np.mean(beta_draws, axis=0)
 
-        # Lower and upper boundary of the cred. interval
+        # Lower and upper boundary of the credible interval
         l_eti = 50 - self.cred_int/2
         u_eti = 50 + self.cred_int/2
         self.eti = np.array([[np.percentile(beta_draws[:,i], q=l_eti), np.percentile(beta_draws[:,i], q=u_eti)] \
@@ -121,6 +111,5 @@ class BayesianRegression(object):
             y_lower_pred = X.dot(lower_w)
             y_upper_pred = X.dot(upper_w)
             return y_pred, y_lower_pred, y_upper_pred
-            
-        return y_pred
 
+        return y_pred

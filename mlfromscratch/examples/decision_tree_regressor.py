@@ -1,16 +1,10 @@
 from __future__ import division, print_function
 import numpy as np
-from sklearn import datasets
 import matplotlib.pyplot as plt
 import pandas as pd
-import sys
-import os
 
-# Import helper functions
-from mlfromscratch.utils.data_manipulation import train_test_split, standardize
-from mlfromscratch.utils.data_operation import accuracy_score
-from mlfromscratch.utils.data_operation import mean_squared_error, calculate_variance
-from mlfromscratch.utils import Plot
+from mlfromscratch.utils import train_test_split, standardize, accuracy_score
+from mlfromscratch.utils import mean_squared_error, calculate_variance, Plot
 from mlfromscratch.supervised_learning import RegressionTree
 
 def main():
@@ -28,11 +22,11 @@ def main():
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
 
-    clf = RegressionTree()
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
+    model = RegressionTree()
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
 
-    y_pred_line = clf.predict(X)
+    y_pred_line = model.predict(X)
 
     # Color map
     cmap = plt.get_cmap('viridis')

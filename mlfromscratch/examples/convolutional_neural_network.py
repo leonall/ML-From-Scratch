@@ -7,13 +7,12 @@ import numpy as np
 
 # Import helper functions
 from mlfromscratch.deep_learning import NeuralNetwork
-from mlfromscratch.utils.data_manipulation import train_test_split, to_categorical, normalize
-from mlfromscratch.utils.data_manipulation import get_random_subsets, shuffle_data
+from mlfromscratch.utils import train_test_split, to_categorical, normalize
+from mlfromscratch.utils import get_random_subsets, shuffle_data, Plot
 from mlfromscratch.utils.data_operation import accuracy_score
-from mlfromscratch.deep_learning.optimizers import GradientDescent, Adam, RMSprop, Adagrad, Adadelta
+from mlfromscratch.deep_learning.optimizers import StochasticGradientDescent, Adam, RMSprop, Adagrad, Adadelta
 from mlfromscratch.deep_learning.loss_functions import CrossEntropy
 from mlfromscratch.utils.misc import bar_widgets
-from mlfromscratch.utils import Plot
 from mlfromscratch.deep_learning.layers import Dense, Dropout, Conv2D, Flatten, Activation, MaxPooling2D
 from mlfromscratch.deep_learning.layers import AveragePooling2D, ZeroPadding2D, BatchNormalization, RNN
 
@@ -58,7 +57,7 @@ def main():
     clf.add(Flatten())
     clf.add(Dense(256))
     clf.add(Activation('relu'))
-    clf.add(Dropout(0.5))
+    clf.add(Dropout(0.4))
     clf.add(BatchNormalization())
     clf.add(Dense(10))
     clf.add(Activation('softmax'))
@@ -78,16 +77,12 @@ def main():
     plt.xlabel('Iterations')
     plt.show()
 
-    # Predict labels of the test data
-    y_pred = np.argmax(clf.predict(X_test), axis=1)
-    y_test = np.argmax(y_test, axis=1)
-
-    accuracy = accuracy_score(y_test, y_pred)
+    _, accuracy = clf.test_on_batch(X_test, y_test)
     print ("Accuracy:", accuracy)
 
-    # Flatten data set
-    X_test = X_test.reshape(-1, 8*8)
 
+    y_pred = np.argmax(clf.predict(X_test), axis=1)
+    X_test = X_test.reshape(-1, 8*8)
     # Reduce dimension to 2D using PCA and plot the results
     Plot().plot_in_2d(X_test, y_pred, title="Convolutional Neural Network", accuracy=accuracy, legend_labels=range(10))
 

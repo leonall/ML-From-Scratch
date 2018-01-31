@@ -3,8 +3,8 @@
 ## About
 Python implementations of some of the fundamental Machine Learning models and algorithms from scratch.
 
-The purpose of this project is not to produce as optimized and computationally efficient algorithms as possible 
-but rather to present the inner workings of them in a transparent way.
+The purpose of this project is not to produce as optimized and computationally efficient algorithms as possible
+but rather to present the inner workings of them in a transparent and accessible way.
 
 ## Table of Contents
 - [Machine Learning From Scratch](#machine-learning-from-scratch)
@@ -17,6 +17,8 @@ but rather to present the inner workings of them in a transparent way.
     + [Density-Based Clustering](#density-based-clustering)
     + [Generating Handwritten Digits](#generating-handwritten-digits)
     + [Deep Reinforcement Learning](#deep-reinforcement-learning)
+    + [Image Reconstruction With RBM](#image-reconstruction-with-rbm)
+    + [Evolutionary Evolved Neural Network](#evolutionary-evolved-neural-network)
     + [Genetic Algorithm](#genetic-algorithm)
     + [Association Analysis](#association-analysis)
   * [Implementations](#implementations)
@@ -25,22 +27,22 @@ but rather to present the inner workings of them in a transparent way.
     + [Reinforcement Learning](#reinforcement-learning)
     + [Deep Learning](#deep-learning)
   * [Contact](#contact)
-    
+
 ## Installation
     $ git clone https://github.com/eriklindernoren/ML-From-Scratch
     $ cd ML-From-Scratch
     $ python setup.py install
-    
+
 ## Example Usage
 ### Polynomial Regression
     $ python mlfromscratch/examples/polynomial_regression.py
 
 <p align="center">
-    <img src="http://eriklindernoren.se/images/mlfs_prr.png" width="640"\>
+    <img src="http://eriklindernoren.se/images/p_reg.gif" width="640"\>
 </p>
 <p align="center">
-    Figure: Polynomial ridge regression of temperature data measured in <br> 
-    Linköping, Sweden 2016.
+    Figure: Training progress of a regularized polynomial regression model fitting <br>
+    temperature data measured in Linköping, Sweden 2016.
 </p>
 
 ### Classification With CNN
@@ -83,7 +85,7 @@ but rather to present the inner workings of them in a transparent way.
 
 ### Density-Based Clustering
     $ python mlfromscratch/examples/dbscan.py
-   
+
 <p align="center">
     <img src="http://eriklindernoren.se/images/mlfs_dbscan.png" width="640">
 </p>
@@ -133,12 +135,13 @@ but rather to present the inner workings of them in a transparent way.
     +------------------------+------------+--------------+
     Total Parameters: 533762
 
-   
+
 <p align="center">
     <img src="http://eriklindernoren.se/images/gan_mnist5.gif" width="640">
 </p>
 <p align="center">
-    Figure: Training progress of a MNIST Generative Adversarial Network.
+    Figure: Training progress of a Generative Adversarial Network generating <br>
+    handwritten digits.
 </p>
 
 ### Deep Reinforcement Learning
@@ -162,6 +165,52 @@ but rather to present the inner workings of them in a transparent way.
 </p>
 <p align="center">
     Figure: Deep Q-Network solution to the CartPole-v1 environment in OpenAI gym.
+</p>
+
+### Image Reconstruction With RBM
+    $ python mlfromscratch/examples/restricted_boltzmann_machine.py
+
+<p align="center">
+    <img src="http://eriklindernoren.se/images/rbm_digits1.gif" width="640">
+</p>
+<p align="center">
+    Figure: Shows how the network gets better during training at reconstructing <br>
+    the digit 2 in the MNIST dataset.
+</p>
+
+### Evolutionary Evolved Neural Network
+    $ python mlfromscratch/examples/neuroevolution.py
+
+    +---------------+
+    | Model Summary |
+    +---------------+
+    Input Shape: (64,)
+    +----------------------+------------+--------------+
+    | Layer Type           | Parameters | Output Shape |
+    +----------------------+------------+--------------+
+    | Dense                | 1040       | (16,)        |
+    | Activation (ReLU)    | 0          | (16,)        |
+    | Dense                | 170        | (10,)        |
+    | Activation (Softmax) | 0          | (10,)        |
+    +----------------------+------------+--------------+
+    Total Parameters: 1210
+
+    Population Size: 100
+    Generations: 3000
+    Mutation Rate: 0.01
+
+    [0 Best Individual - Fitness: 3.08301, Accuracy: 10.5%]
+    [1 Best Individual - Fitness: 3.08746, Accuracy: 12.0%]
+    ...
+    [2999 Best Individual - Fitness: 94.08513, Accuracy: 98.5%]
+    Test set accuracy: 96.7%
+
+<p align="center">
+    <img src="http://eriklindernoren.se/images/evo_nn4.png" width="640">
+</p>
+<p align="center">
+    Figure: Classification of the digit dataset by a neural network which has<br>
+    been evolutionary evolved.
 </p>
 
 ### Genetic Algorithm
@@ -195,7 +244,7 @@ but rather to present the inner workings of them in a transparent way.
     [294 Answer: 'Genetic Algorithm']
 
 ### Association Analysis
-    $ python mlfromscratch/examples/apriori.py 
+    $ python mlfromscratch/examples/apriori.py
     +-------------+
     |   Apriori   |
     +-------------+
@@ -222,14 +271,18 @@ but rather to present the inner workings of them in a transparent way.
 - [Adaboost](mlfromscratch/supervised_learning/adaboost.py)
 - [Bayesian Regression](mlfromscratch/supervised_learning/bayesian_regression.py)
 - [Decision Tree](mlfromscratch/supervised_learning/decision_tree.py)
+- [Elastic Net](mlfromscratch/supervised_learning/regression.py)
 - [Gradient Boosting](mlfromscratch/supervised_learning/gradient_boosting.py)
 - [K Nearest Neighbors](mlfromscratch/supervised_learning/k_nearest_neighbors.py)
+- [Lasso Regression](mlfromscratch/supervised_learning/regression.py)
 - [Linear Discriminant Analysis](mlfromscratch/supervised_learning/linear_discriminant_analysis.py)
 - [Linear Regression](mlfromscratch/supervised_learning/regression.py)
 - [Logistic Regression](mlfromscratch/supervised_learning/logistic_regression.py)
 - [Multi-class Linear Discriminant Analysis](mlfromscratch/supervised_learning/multi_class_lda.py)
 - [Multilayer Perceptron](mlfromscratch/supervised_learning/multilayer_perceptron.py)
 - [Naive Bayes](mlfromscratch/supervised_learning/naive_bayes.py)
+- [Neuroevolution](mlfromscratch/supervised_learning/neuroevolution.py)
+- [Particle Swarm Optimization of Neural Network](mlfromscratch/supervised_learning/particle_swarm_optimization.py)
 - [Perceptron](mlfromscratch/supervised_learning/perceptron.py)
 - [Polynomial Regression](mlfromscratch/supervised_learning/regression.py)
 - [Random Forest](mlfromscratch/supervised_learning/random_forest.py)
@@ -239,6 +292,7 @@ but rather to present the inner workings of them in a transparent way.
 
 ### Unsupervised Learning
 - [Apriori](mlfromscratch/unsupervised_learning/apriori.py)
+- [Autoencoder](mlfromscratch/unsupervised_learning/autoencoder.py)
 - [DBSCAN](mlfromscratch/unsupervised_learning/dbscan.py)
 - [FP-Growth](mlfromscratch/unsupervised_learning/fp_growth.py)
 - [Gaussian Mixture Model](mlfromscratch/unsupervised_learning/gaussian_mixture_model.py)
@@ -247,12 +301,13 @@ but rather to present the inner workings of them in a transparent way.
 - [K-Means](mlfromscratch/unsupervised_learning/k_means.py)
 - [Partitioning Around Medoids](mlfromscratch/unsupervised_learning/partitioning_around_medoids.py)
 - [Principal Component Analysis](mlfromscratch/unsupervised_learning/principal_component_analysis.py)
+- [Restricted Boltzmann Machine](mlfromscratch/unsupervised_learning/restricted_boltzmann_machine.py)
 
 ### Reinforcement Learning
 - [Deep Q-Network](mlfromscratch/reinforcement_learning/deep_q_network.py)
 
 ### Deep Learning
-  + [Base Class](mlfromscratch/deep_learning/neural_network.py)
+  + [Neural Network](mlfromscratch/deep_learning/neural_network.py)
   + [Layers](mlfromscratch/deep_learning/layers.py)
     * Activation Layer
     * Average Pooling Layer
@@ -273,9 +328,5 @@ but rather to present the inner workings of them in a transparent way.
     * [Recurrent Neural Network](mlfromscratch/examples/recurrent_neural_network.py)
 
 ## Contact
-If there's some implementation you would like to see here or if you're just
-feeling social, feel free to email me or connect with me on LinkedIn.
-
-[eriklindernoren@gmail.com](mailto:eriklindernoren@gmail.com) <br>
-[LinkedIn](https://www.linkedin.com/in/eriklindernoren/)
-
+If there's some implementation you would like to see here or if you're just feeling social,
+feel free to [email](mailto:eriklindernoren@gmail.com) me or connect with me on [LinkedIn](https://www.linkedin.com/in/eriklindernoren/).

@@ -1,6 +1,6 @@
 from __future__ import division
 import numpy as np
-from mlfromscratch.utils.data_operation import accuracy_score
+from mlfromscratch.utils import accuracy_score
 from mlfromscratch.deep_learning.activation_functions import Sigmoid
 
 class Loss(object):
@@ -21,7 +21,6 @@ class SquareLoss(Loss):
 
     def gradient(self, y, y_pred):
         return -(y - y_pred)
-
 
 class CrossEntropy(Loss):
     def __init__(self): pass
